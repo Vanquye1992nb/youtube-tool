@@ -2,71 +2,82 @@ import streamlit as st
 import google.generativeai as genai
 import pandas as pd
 
-# --- CẤU HÌNH GIAO DIỆN ---
-st.set_page_config(page_title="Tool Tìm Key Youtube", layout="wide")
+# --- CẤU HÌNH GIAO DIỆN DARK MODE ---
+st.set_page_config(page_title="Tool Tìm Key Youtube Văn Thế Web", layout="wide")
 
-# Tùy chỉnh CSS để giống ảnh mẫu
 st.markdown("""
     <style>
     .main { background-color: #0e1117; color: white; }
-    .stButton>button { width: 100%; background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%); color: black; font-weight: bold; border: none; border-radius: 10px; height: 3em; }
-    .stTextInput>div>div>input { background-color: #1e2130; color: white; border-radius: 10px; border: 1px solid #30363d; }
-    .header-text { color: #f1c40f; text-align: center; font-weight: bold; font-size: 32px; }
+    .stButton>button { 
+        width: 100%; 
+        background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%); 
+        color: black; font-weight: bold; border: none; border-radius: 10px; height: 3.5em;
+    }
+    .header-text { color: #f1c40f; text-align: center; font-weight: bold; font-size: 35px; margin-bottom: 0px; }
+    .sub-text { text-align: center; color: #888; margin-bottom: 30px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- PHẦN ĐẦU TRANG ---
+# --- HEADER ---
 st.markdown('<p class="header-text">🖥️ Tool Tìm Key Youtube Văn Thế Web AI</p>', unsafe_allow_html=True)
-st.write("<p style='text-align: center; color: gray;'>Công cụ tự động hóa nghiên cứu từ khóa nâng cấp bởi Gemini AI</p>", unsafe_allow_html=True)
+st.markdown('<p class="sub-text">Công cụ tự động hóa nghiên cứu từ khóa nâng cấp bởi Gemini AI</p>', unsafe_allow_html=True)
 
-# --- NHẬP API KEY ---
+# --- SIDEBAR: CẤU HÌNH API ---
 with st.sidebar:
-    st.header("Cấu hình")
-    api_key = st.text_input("Nhập Gemini API Key:", type="password")
-    st.info("Lấy key tại: aistudio.google.com")
+    st.header("⚙️ Cấu hình hệ thống")
+    api_key = st.text_input("Nhập Gemini API Key:", type="password", help="Lấy key tại aistudio.google.com")
+    st.markdown("---")
+    st.write("📌 **Hướng dẫn:**")
+    st.write("1. Dán API Key vào ô trên")
+    st.write("2. Nhập chủ đề video")
+    st.write("3. Nhấn 'Tìm kiếm' và đợi AI trả kết quả")
 
-# --- FORM NHẬP LIỆU (Giống ảnh mẫu) ---
+# --- LAYOUT CHÍNH ---
 col1, col2 = st.columns(2)
 
 with col1:
-    chu_de = st.text_input("# Chủ Đề (Bắt buộc)", placeholder="vd: Sinh tồn hoang dã, Mukbang AI")
-    st.button("💡 Danh sách gợi ý", help="Nhấn để AI gợi ý thêm chủ đề")
-    tu_khoa = st.text_input("# Từ Khóa Chính (Tùy chọn)", placeholder="vd: xây nhà trú ẩn, ăn đồ siêu cay")
+    chu_de = st.text_input("# Chủ Đề (Bắt buộc)", placeholder="vd: Hoạt hình, Mukbang AI, Sinh tồn")
+    st.button("💡 Danh sách gợi ý chủ đề")
+    tu_khoa_phu = st.text_input("# Từ Khóa Chính (Tùy chọn)", placeholder="vd: tu tiên, rèn luyện")
 
 with col2:
-    ngon_ngu = st.selectbox("🌐 Ngôn Ngữ", ["Tiếng Việt", "English", "Japanese", "Korean"])
-    doi_tuong = st.selectbox("👥 Đối Tượng Mục Tiêu", ["View Việt", "View Quốc Tế", "View Mỹ"])
-    so_luong = st.number_input("🔍 Số lượng từ khóa", min_value=1, max_value=50, value=10)
+    ngon_ngu = st.selectbox("🌐 Ngôn Ngữ", ["Tiếng Việt", "English", "Japanese"])
+    doi_tuong = st.selectbox("👥 Đối Tượng Mục Tiêu", ["View Việt", "View Quốc Tế"])
+    so_luong = st.slider("🔍 Số lượng từ khóa muốn tìm", 5, 30, 10)
 
-# --- XỬ LÝ KHI NHẤN NÚT ---
+# --- XỬ LÝ DỮ LIỆU ---
 if st.button("🚀 TÌM KIẾM TỪ KHÓA NÂNG CAO"):
     if not api_key:
-        st.error("Vui lòng nhập API Key ở thanh bên trái!")
+        st.error("❌ Vui lòng nhập API Key ở cột bên trái!")
     elif not chu_de:
-        st.warning("Vui lòng nhập chủ đề!")
+        st.warning("⚠️ Bạn chưa nhập chủ đề video!")
     else:
-        with st.spinner('AI đang phân tích dữ liệu thị trường...'):
-            try:
-                genai.configure(api_key=api_key)
-                model = genai.GenerativeModel('gemini-1.5-flash')
-                
-                prompt = f"""Hãy đóng vai chuyên gia SEO Youtube. Tìm {so_luong} từ khóa ngách cho chủ đề '{chu_de}' 
-                với từ khóa chính là '{tu_khoa}'. Ngôn ngữ {ngon_ngu}, mục tiêu {doi_tuong}. 
-                Trả về kết quả duy nhất là một bảng gồm các cột: Từ khóa, Độ khó (0-100), Lượt tìm kiếm, Xu hướng."""
+        try:
+            # Khởi tạo AI
+            genai.configure(api_key=api_key)
+            # Sử dụng gemini-1.5-flash với cấu hình chuẩn
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            with st.spinner('🎯 AI đang phân tích thị trường YouTube...'):
+                prompt = f"""
+                Bạn là một chuyên gia SEO YouTube chuyên nghiệp. 
+                Hãy phân tích chủ đề '{chu_de}' với từ khóa phụ '{tu_khoa_phu}'.
+                Tìm {so_luong} từ khóa tiềm năng cho {doi_tuong} bằng {ngon_ngu}.
+                Yêu cầu: Trả về kết quả dưới dạng BẢNG gồm các cột: 
+                STT, Từ khóa, Độ khó (%), Lượng tìm kiếm, Xu hướng.
+                Cuối cùng hãy đưa ra 1 lời khuyên chiến lược để video này lên xu hướng.
+                """
                 
                 response = model.generate_content(prompt)
                 
-                st.success("Đã tìm thấy từ khóa tiềm năng!")
-                st.markdown(response.text) # Hiển thị bảng kết quả
+                # Hiển thị kết quả
+                st.success("✅ Đã phân tích xong!")
+                st.markdown("### 📊 Bảng phân tích từ khóa ngách:")
+                st.markdown(response.text)
                 
-                # Tính năng nâng cấp: Gợi ý tiêu đề
-                st.subheader("📝 Gợi ý Tiêu đề Video chuẩn SEO:")
-                title_prompt = f"Dựa vào các từ khóa trên, viết 3 tiêu đề video cực kỳ thu hút cho chủ đề {chu_de}."
-                titles = model.generate_content(title_prompt)
-                st.info(titles.text)
-                
-            except Exception as e:
-                st.error(f"Lỗi: {e}")
+        except Exception as e:
+            st.error(f"❌ Lỗi: {str(e)}")
+            st.info("Mẹo: Nếu gặp lỗi 404, hãy kiểm tra lại API Key hoặc thử lại sau ít phút.")
 
 st.markdown("---")
-st.caption("Ứng dụng được phát triển với sự hỗ trợ của Gemini AI - 2026")
+st.caption("© 2026 Developed for Van The Web Team - Powered by Gemini Pro v1.5")
