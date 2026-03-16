@@ -3,7 +3,7 @@ import google.generativeai as genai
 import pandas as pd
 
 # --- CẤU HÌNH GIAO DIỆN DARK MODE ---
-st.set_page_config(page_title="Tool Tìm Key Youtube Văn Thế Web", layout="wide")
+st.set_page_config(page_title="Tool Tìm Key Youtube Web", layout="wide")
 
 st.markdown("""
     <style>
@@ -55,8 +55,8 @@ if st.button("🚀 TÌM KIẾM TỪ KHÓA NÂNG CAO"):
         try:
             # Khởi tạo AI
             genai.configure(api_key=api_key)
-            # Sử dụng gemini-1.5-flash với cấu hình chuẩn
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            # Sử dụng gemini-pro với cấu hình chuẩn
+            model = genai.GenerativeModel('gemini-pro')
             
             with st.spinner('🎯 AI đang phân tích thị trường YouTube...'):
                 prompt = f"""
