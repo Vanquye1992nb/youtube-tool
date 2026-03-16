@@ -1,75 +1,50 @@
 import streamlit as st
 import google.generativeai as genai
-import pandas as pd
 
-# --- CẤU HÌNH GIAO DIỆN DARK MODE ---
+# --- GIAO DIỆN ---
 st.set_page_config(page_title="Tool Youtube Văn Thế Web AI", layout="wide")
-
 st.markdown("""
     <style>
     .main { background-color: #0e1117; color: white; }
-    .stButton>button { 
-        width: 100%; 
-        background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%); 
-        color: black !important; font-weight: bold; border-radius: 12px; height: 3.5em; border: none;
-    }
+    .stButton>button { width: 100%; background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%); color: black !important; font-weight: bold; border-radius: 12px; height: 3.5em; border: none; }
     .header-title { color: #f1c40f; text-align: center; font-size: 32px; font-weight: bold; }
-    .stTextInput>div>div>input { background-color: #1e2130; color: white; border-radius: 10px; }
     </style>
     """, unsafe_allow_html=True)
 
 st.markdown('<p class="header-title">🖥️ Tool Tìm Key Youtube Văn Thế Web AI</p>', unsafe_allow_html=True)
 
-# --- SIDEBAR ---
 with st.sidebar:
-    st.header("🔑 Cấu hình API")
+    st.header("🔑 Cấu hình")
     api_key = st.text_input("Nhập Gemini API Key:", type="password")
-    st.info("Lấy key miễn phí tại: aistudio.google.com")
 
-# --- NHẬP LIỆU ---
 col1, col2 = st.columns(2)
 with col1:
-    chu_de = st.text_input("# Chủ Đề (Bắt buộc)", placeholder="vd: Hoạt hình, Mukbang AI")
-    tu_khoa = st.text_input("# Từ Khóa Chính (Tùy chọn)", placeholder="vd: tu tiên, rèn luyện")
+    chu_de = st.text_input("# Chủ Đề", placeholder="vd: Hoạt hình, Mukbang")
 with col2:
-    ngon_ngu = st.selectbox("🌐 Ngôn Ngữ", ["Tiếng Việt", "English"])
-    doi_tuong = st.selectbox("👥 Đối Tượng", ["View Việt", "View Quốc Tế"])
     so_luong = st.number_input("🔍 Số lượng", min_value=5, max_value=30, value=10)
 
-# --- XỬ LÝ ---
 if st.button("🚀 TÌM KIẾM TỪ KHÓA NÂNG CAO"):
     if not api_key:
-        st.error("Vui lòng dán API Key vào bên trái!")
-    elif not chu_de:
-        st.warning("Vui lòng nhập chủ đề!")
+        st.error("Vui lòng nhập API Key!")
     else:
         try:
-            # Cấu hình AI với phiên bản API v1beta
             genai.configure(api_key=api_key)
             
-            # SỬA LỖI 404: Sử dụng tên model đầy đủ và kiểm tra kết nối
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            # CƠ CHẾ TỰ SỬA LỖI 404: Quét model khả dụng
+            available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
             
-            with st.spinner('Đang phân tích xu hướng YouTube...'):
-                prompt = f"Bạn là chuyên gia SEO Youtube. Tìm {so_luong} từ khóa cho '{chu_de}', từ khóa phụ '{tu_khoa}'. Đối tượng {doi_tuong}, ngôn ngữ {ngon_ngu}. Trả về dạng bảng gồm: STT, Từ khóa, Độ khó (%), Lượt tìm kiếm, Xu hướng."
-                
-                response = model.generate_content(prompt)
-                
-                if response.text:
-                    st.success("Hoàn tất phân tích!")
-                    st.markdown(response.text)
-                else:
-                    st.error("AI không trả về dữ liệu. Hãy kiểm tra lại API Key.")
-                    
-        except Exception as e:
-            # Nếu vẫn lỗi 404, thử tự động chuyển sang model 'gemini-pro'
-            try:
-                model = genai.GenerativeModel('gemini-pro')
+            # Ưu tiên chọn 1.5-flash, nếu không có thì chọn cái đầu tiên trong danh sách
+            target_model = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in available_models else available_models[0]
+            
+            model = genai.GenerativeModel(target_model)
+            
+            with st.spinner(f'Đang chạy với model: {target_model}...'):
+                prompt = f"Tìm {so_luong} từ khóa SEO Youtube cho chủ đề '{chu_de}'. Trả về bảng gồm: STT, Từ khóa, Độ khó, Lượt tìm kiếm."
                 response = model.generate_content(prompt)
                 st.markdown(response.text)
-            except:
-                st.error(f"Lỗi hệ thống: {str(e)}")
-                st.info("Mẹo: Đảm bảo file requirements.txt của bạn đã có dòng 'google-generativeai'")
+                
+        except Exception as e:
+            st.error(f"Lỗi: {str(e)}")
+            st.info("Kiểm tra lại xem API Key có bị giới hạn vùng địa lý không.")
 
-st.markdown("---")
 st.caption("© 2026 Developed for Van The Web Team")
